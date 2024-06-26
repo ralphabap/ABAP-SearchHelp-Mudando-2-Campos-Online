@@ -1,0 +1,2003 @@
+*----------------------------------------------------------------------
+***INCLUDE MZYNF005I01 .
+*----------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  user_exit  INPUT
+*&---------------------------------------------------------------------*
+MODULE user_exit INPUT.
+
+  IF ok_code EQ 'ENCE'.
+    IF v_tcode NE 'ZYNF005_E'.
+      CALL FUNCTION 'POPUP_TO_CONFIRM_LOSS_OF_DATA'
+        EXPORTING
+          titel     = text-000
+          textline1 = text-001
+          textline2 = space
+        IMPORTING
+          answer    = v_answer.
+
+      IF v_answer = 'J'.
+        PERFORM limpa_dados.
+        PERFORM unlock_record.
+        LEAVE PROGRAM.
+      ENDIF.
+    ELSE.
+      PERFORM limpa_dados.
+      PERFORM unlock_record.
+      LEAVE PROGRAM.
+    ENDIF.
+
+*  Reinicia o processamento para inclusão, alteração e exibição das NFs
+  ELSEIF ok_code EQ 'OUTRA'.
+
+    IF sy-tcode = 'ZYNF005' AND v_tcode = 'ZYNF005_E'.
+      LEAVE TO TRANSACTION 'ZYNF005'.
+    ELSEIF sy-tcode = 'ZYNF005' AND v_tcode = 'ZYNF005_A' OR
+           sy-tcode = 'ZYNF005' AND v_tcode = 'ZYNF005'.
+      CALL FUNCTION 'POPUP_TO_CONFIRM_LOSS_OF_DATA'
+        EXPORTING
+          titel     = text-000
+          textline1 = text-001
+          textline2 = space
+        IMPORTING
+          answer    = v_answer.
+
+      IF v_answer = 'J'.
+        PERFORM limpa_dados.
+        PERFORM unlock_record.
+        LEAVE TO TRANSACTION 'ZYNF005'.
+      ENDIF.
+    ELSEIF sy-tcode = 'ZYNF005_A'.
+      CALL FUNCTION 'POPUP_TO_CONFIRM_LOSS_OF_DATA'
+        EXPORTING
+          titel     = text-000
+          textline1 = text-001
+          textline2 = space
+        IMPORTING
+          answer    = v_answer.
+
+      IF v_answer = 'J'.
+        PERFORM limpa_dados.
+        PERFORM unlock_record.
+        LEAVE TO TRANSACTION 'ZYNF005_A'.
+      ENDIF.
+    ELSEIF sy-tcode = 'ZYNF005_E'.
+      LEAVE TO TRANSACTION 'ZYNF005_E'.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " user_exit_0100  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  atualiza_itab_zynft006  INPUT
+*&---------------------------------------------------------------------*
+*       Atualiza a tabela de itens da NF
+*----------------------------------------------------------------------*
+MODULE atualiza_itab_zynft006 INPUT.
+
+  MOVE:  zynfe006-itmnum TO itab_zynft006-itmnum,
+         zynfe006-matnr  TO itab_zynft006-matnr ,
+         zynfe006-menge  TO itab_zynft006-menge ,
+         zynfe006-netpr  TO itab_zynft006-netpr ,
+         zynfe006-meins  TO itab_zynft006-meins ,
+         zynfe006-brgew  TO itab_zynft006-brgew ,
+         zynfe006-ntgew  TO itab_zynft006-ntgew ,
+         zynfe006-matorg TO itab_zynft006-matorg,
+         zynfe006-werks  TO itab_zynft006-werks ,
+         zynfe006-nbm    TO itab_zynft006-nbm   ,
+         zynfe006-netfre TO itab_zynft006-netfre,
+         zynfe006-netins TO itab_zynft006-netins,
+         zynfe006-netoth TO itab_zynft006-netoth,
+         zynfe005-nrseq  TO itab_zynft006-nrseq ,
+         zynfe006-cfop   TO itab_zynft006-cfop  ,
+         mark            TO itab_zynft006-mark  .
+
+  MODIFY itab_zynft006 INDEX tc_itens-current_line.
+
+ENDMODULE.                 " atualiza_itab_zynft006  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  atualiza_itab_zynft007  INPUT
+*&---------------------------------------------------------------------*
+*       Atualiza a tabela de contabilização da NF
+*----------------------------------------------------------------------*
+MODULE atualiza_itab_zynft007 INPUT.
+
+  MOVE: zynfe007-itmnum    TO itab_zynft007_aux2-itmnum   ,
+        zynfe007-tpvalor   TO itab_zynft007_aux2-tpvalor  ,
+        zynfe007-netwr     TO itab_zynft007_aux2-netwr    ,
+        zynfe007-d_newko   TO itab_zynft007_aux2-d_newko  ,
+        zynfe007-d_bupla   TO itab_zynft007_aux2-d_bupla  ,
+        zynfe007-d_kostl   TO itab_zynft007_aux2-d_kostl  ,
+        zynfe007-d_prctr   TO itab_zynft007_aux2-d_prctr  ,
+        zynfe007-d_gsber   TO itab_zynft007_aux2-d_gsber  ,
+        zynfe007-d_aufnr   TO itab_zynft007_aux2-d_aufnr  ,
+        zynfe007-c_newko   TO itab_zynft007_aux2-c_newko  ,
+        zynfe007-c_bupla   TO itab_zynft007_aux2-c_bupla  ,
+        zynfe007-c_kostl   TO itab_zynft007_aux2-c_kostl  ,
+        zynfe007-c_prctr   TO itab_zynft007_aux2-c_prctr  ,
+        zynfe007-c_gsber   TO itab_zynft007_aux2-c_gsber  ,
+        zynfe007-c_aufnr   TO itab_zynft007_aux2-c_aufnr  ,
+        zynfe007-sgtxt     TO itab_zynft007_aux2-sgtxt    ,
+        zynfe007-belnr     TO itab_zynft007_aux2-belnr    ,
+        zynfe005-nrseq     TO itab_zynft007_aux2-nrseq    .
+
+  MODIFY itab_zynft007_aux2 INDEX tc_cont-current_line.
+  IF sy-subrc NE 0.
+    APPEND itab_zynft007_aux2.
+  ENDIF.
+
+ENDMODULE.                 " atualiza_itab_zynft007  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND  INPUT
+*&---------------------------------------------------------------------*
+MODULE
+user_command INPUT.
+
+  CASE sy-dynnr.
+
+    WHEN '0100'.
+      PERFORM busca_descricao.
+
+      IF ok_code = 'FC_CAB'.
+        pressed_tab = ok_code.
+      ELSEIF ok_code = 'FC_ITENS'.
+        pressed_tab = ok_code.
+      ELSEIF ok_code = 'FC_ADIC'.
+        pressed_tab = ok_code.
+      ELSEIF ok_code = 'FC_CONT'.
+        pressed_tab = ok_code.
+      ELSEIF ok_code = 'FC_IMPOSTOS'.
+        pressed_tab = ok_code.
+      ELSEIF ok_code = 'FC_MSG'.
+        pressed_tab = ok_code.
+        PERFORM message_header.
+* >>> Modificação ID 34 - 26/09/2011 - Início
+      ELSEIF ok_code = 'FC_EXPORT'.
+        pressed_tab = ok_code.
+* <<< Modificação ID 34 - 26/09/2011 - Fim
+      ENDIF.
+
+      CASE ok_code.
+        WHEN 'MSGI'.
+          PERFORM message_header.
+          CLEAR ok_code.
+        WHEN 'ADMS'.
+          PERFORM criar_mensagem.
+          CLEAR ok_code.
+        WHEN 'LKML'.
+          PERFORM message_link_items.
+          CLEAR ok_code.
+        WHEN 'DELE'.
+          PERFORM exclui_item.
+          CLEAR ok_code.
+        WHEN 'DELM'.
+          PERFORM exclui_mensagem.
+          CLEAR ok_code.
+        WHEN 'SAVE'.
+          PERFORM salvar_dados.
+          CLEAR ok_code.
+        WHEN 'DEL'.
+          PERFORM excluir_dados.
+          CLEAR ok_code.
+        WHEN 'DALL'.
+          PERFORM desmarcar_tudo.
+          CLEAR ok_code.
+        WHEN 'MALL'.
+          PERFORM marcar_tudo.
+          CLEAR ok_code.
+        WHEN 'BACK'.
+          PERFORM trata_saida.
+        WHEN 'MODI'.
+          PERFORM trata_exib_modif.
+          CLEAR ok_code.
+        WHEN 'MODO'.
+          PERFORM modo_batch_input.
+          CLEAR ok_code.
+        WHEN 'CLI'.
+          PERFORM chama_nf.
+          CLEAR ok_code.
+        WHEN 'REF'.
+          PERFORM cria_ref.
+          CLEAR ok_code.
+        WHEN 'GERA'.
+          PERFORM gera_nota_fiscal.
+        WHEN 'SAIDA'.
+          LOOP AT itab_zynft007_aux2
+                        WHERE belnr EQ space AND netwr NE 0.
+          ENDLOOP.
+          IF sy-subrc = 0.
+            MESSAGE i073.
+          ELSE.
+            v_saida = 'X'.
+            PERFORM gera_j1b3n.
+            PERFORM salvar_dados.
+          ENDIF.
+        WHEN 'CANCEL'.
+          PERFORM cancela_nota_fiscal.
+        WHEN 'PRINT'.
+          CLEAR v_saida.
+          PERFORM imprimir_novamente.
+        WHEN 'ITEMNF'.
+          PERFORM busca_refdocnum.
+          CALL SCREEN 0002 STARTING AT 3 3.
+      ENDCASE.
+
+    WHEN '0101'.
+      CASE ok_code.
+        WHEN 'OK'.
+          PERFORM move_ref.
+          CLEAR ok_code.
+          SET SCREEN 0.
+        WHEN 'CANC'.
+          SET SCREEN 0.
+          LEAVE SCREEN.
+      ENDCASE.
+
+    WHEN '0120'.
+      CASE ok_code.
+        WHEN 'P-' OR 'P--' OR 'P+' OR 'P++'.
+          PERFORM blaettern.
+        WHEN 'CLI'.
+          PERFORM chama_item.
+        WHEN 'CRIAR'.
+          IF pressed_tab = 'FC_ITENS'.
+            CLEAR: wa_zynft002,zynfe006, netwrt, descricao.
+* >>> Modificação ID 34 - 26/09/2011 - Início
+            clear: wa_zynft014, v_dt_di, v_hr_di,
+                   v_dt_DESEMBARACO, v_hr_DESEMBARACO.
+* <<< Modificação ID 34 - 26/09/2011 - Fim
+
+            CALL SCREEN '0121'.
+          ENDIF.
+      ENDCASE.
+
+    WHEN '0140'.
+      CASE ok_code.
+        WHEN 'P-' OR 'P--' OR 'P+' OR 'P++'.
+          PERFORM blaettern.
+        WHEN 'CLI'.
+          PERFORM chama_cont.
+        WHEN 'CRIAR'.
+          IF pressed_tab = 'FC_CONT'.
+            CLEAR: zynfe007.
+            CALL SCREEN '0141'.
+          ENDIF.
+      ENDCASE.
+
+    WHEN '0123' OR '0124' OR '0160'.
+      CASE ok_code.
+        WHEN 'P-' OR 'P--' OR 'P+' OR 'P++'.
+          PERFORM blaettern.
+      ENDCASE.
+
+    WHEN '0150'.
+      CASE ok_code.
+        WHEN 'CLI'.
+          PERFORM chama_mensagem.
+        WHEN 'P-- '.
+          CLEAR ok_code.
+          pagebegin = 0.
+        WHEN 'P-  '.
+          CLEAR ok_code.
+          IF pagebegin >= loop_lines.
+            pagebegin = pagebegin - loop_lines.
+          ELSE.
+            pagebegin = 0.
+          ENDIF.
+        WHEN 'P+  '.
+          CLEAR ok_code.
+          pagebegin = pagebegin + loop_lines.
+          IF pagebegin >= tab_lines.
+            pagebegin = pagebegin - loop_lines.
+          ENDIF.
+        WHEN 'P++ '.
+          CLEAR ok_code.
+          pagebegin = tab_lines - loop_lines.
+          IF pagebegin < 0.
+            pagebegin = 0.
+          ENDIF.
+      ENDCASE.
+
+    WHEN '0510'.
+      CASE ok_code.
+        WHEN 'OK'.
+          PERFORM update_ref_messages.
+          CLEAR ok_code.
+          SET SCREEN 0.
+        WHEN 'CANC'.
+          SET SCREEN 0.
+          LEAVE SCREEN.
+      ENDCASE.
+
+    WHEN '0121'.
+      PERFORM busca_descricao.
+      IF ok_code = 'FC_ITMDET'.
+        pressed_tab = ok_code.
+      ELSEIF ok_code = 'FC_IMP'.
+        pressed_tab = ok_code.
+      ELSEIF ok_code = 'FC_MSGITM'.
+        pressed_tab = ok_code.
+* >>> Modificação ID 34 - 26/09/2011 - Início
+      ELSEIF ok_code = 'FC_IMPORT'.
+        pressed_tab = ok_code.
+* <<< Modificação ID 34 - 26/09/2011 - Fim
+      ENDIF.
+      CASE ok_code.
+        WHEN 'BACK'.
+          CLEAR ok_code.
+          CLEAR descricao.
+          pressed_tab = 'FC_ITENS'.
+          SET SCREEN 0.
+        WHEN 'CLI'.
+          GET CURSOR FIELD v_campo LINE v_index.
+          IF v_campo = 'ZYNFE005-DOCNUM'.
+            PERFORM chama_nf.
+          ENDIF.
+        WHEN 'FIRST'.
+          v_index = zynfe006-itmnum / 10.
+          IF v_index NE 1.
+            v_index = 1.
+            v_campo = 'ZYNFE006'.
+            CLEAR: itab_zynft009_aux, wk_ftx1_aux, wa_zynft002.
+            REFRESH: itab_zynft009_aux, wk_ftx1_aux.
+          ENDIF.
+          PERFORM chama_item.
+        WHEN 'PRIOR'.
+          v_index = zynfe006-itmnum / 10.
+          IF v_index NE 1.
+            v_index = v_index - 1.
+            v_campo = 'ZYNFE006'.
+            CLEAR: itab_zynft009_aux, wk_ftx1_aux, wa_zynft002.
+            REFRESH: itab_zynft009_aux, wk_ftx1_aux.
+          ENDIF.
+          PERFORM chama_item.
+        WHEN 'NEXT'.
+          v_index = zynfe006-itmnum / 10.
+          DESCRIBE TABLE itab_zynft006 LINES v_line.
+          IF v_index NE v_line.
+            v_index = v_index + 1.
+            v_campo = 'ZYNFE006'.
+            CLEAR: itab_zynft009_aux, wk_ftx1_aux, wa_zynft002.
+            REFRESH: itab_zynft009_aux, wk_ftx1_aux.
+          ENDIF.
+          PERFORM chama_item.
+        WHEN 'LAST'.
+          v_index = zynfe006-itmnum / 10.
+          DESCRIBE TABLE itab_zynft006 LINES v_line.
+          IF v_index NE v_line.
+            v_index = v_line.
+            v_campo = 'ZYNFE006'.
+            CLEAR: itab_zynft009_aux, wk_ftx1_aux, wa_zynft002.
+            REFRESH: itab_zynft009_aux, wk_ftx1_aux.
+          ENDIF.
+          PERFORM chama_item.
+      ENDCASE.
+
+    WHEN '0122'.
+      CASE ok_code.
+        WHEN 'PROP'.
+          PERFORM propor_valores.
+
+      ENDCASE.
+
+    WHEN '0141'.
+      PERFORM busca_descricao.
+      CASE ok_code.
+        WHEN 'BACK'.
+          CLEAR ok_code.
+          pressed_tab = 'FC_CONT'.
+          SET SCREEN 0.
+          LEAVE SCREEN.
+        WHEN 'CLI'.
+          GET CURSOR FIELD v_campo.
+          IF v_campo = 'ZYNFE005-DOCNUM'.
+            PERFORM chama_nf.
+          ELSEIF v_campo = 'ZYNFE007-BELNR'.
+            PERFORM chama_f_02.
+          ENDIF.
+      ENDCASE.
+    WHEN '0002'.
+      CASE ok_code.
+        WHEN 'BACK'.
+          CLEAR ok_code.
+          SET SCREEN 0.
+          LEAVE SCREEN.
+        WHEN 'OK'.
+          LOOP AT itab_zynfe010 WHERE mark = 'X'.
+          ENDLOOP.
+          IF sy-subrc = 0.
+            PERFORM cria_itens.
+          ENDIF.
+      ENDCASE.
+
+  ENDCASE.
+
+ENDMODULE.                 " USER_COMMAND  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  clear_count  INPUT
+*&---------------------------------------------------------------------*
+MODULE clear_count INPUT.
+  CLEAR count.
+ENDMODULE.                 " clear_count  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  check_line_message  INPUT
+*&---------------------------------------------------------------------*
+MODULE check_line_message INPUT.
+
+  read_index_message = pagebegin + sy-stepl.
+  READ TABLE wk_ftx1 INDEX read_index_message.
+  IF j_1bdyftx-selkz = 'X'.
+    wk_ftx1-selkz = 'X'.
+    count = count + 1.
+  ELSE.
+    CLEAR wk_ftx1-selkz.
+  ENDIF.
+  MODIFY wk_ftx1 INDEX read_index_message.
+
+ENDMODULE.                 " check_line_message  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  set_cursor_message  INPUT
+*&---------------------------------------------------------------------*
+MODULE set_cursor_message INPUT.
+  DATA: wk_cursor LIKE sy-stepl.
+
+  wk_cursor = sy-stepl + 1.
+  SET CURSOR FIELD 'J_1BDYFTX-SELKZ' LINE wk_cursor.
+
+ENDMODULE.                 " set_cursor_message  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  move_screen_150_data  INPUT
+*&---------------------------------------------------------------------*
+MODULE move_screen_150_data INPUT.
+
+  CHECK v_tcode NE 'ZYNF005_E'.
+  read_index_message = pagebegin + sy-stepl.
+
+  READ TABLE wk_ftx1 INDEX read_index_message.
+
+  IF sy-subrc = 0.
+*   Salva linha atual na tabela wk_ftx1
+    MOVE j_1bdyftx-message TO wk_ftx1-message.
+    MODIFY wk_ftx1 INDEX read_index_message.
+    LOOP AT wk_ftx
+      WHERE seqnum = wk_ftx1-seqnum
+      AND   linnum = wk_ftx1-linnum.
+      MOVE-CORRESPONDING wk_ftx1 TO wk_ftx.
+      MODIFY wk_ftx.
+    ENDLOOP.
+    IF sy-subrc <> 0.
+      MOVE-CORRESPONDING wk_ftx1 TO wk_ftx.
+      APPEND wk_ftx.
+    ENDIF.
+    wk_flag_change = 'X'.            " Tela foi alterada
+    wk_pai_proc    = 'Y'.            " PAI Processado
+
+  ENDIF.
+
+ENDMODULE.                 " move_screen_150_data  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  check_blank_message  INPUT
+*&---------------------------------------------------------------------*
+MODULE check_blank_message INPUT.
+
+  CHECK v_tcode <> 'ZYNF005_E'.
+  CHECK ok_code <> 'DELM'.
+  IF j_1bdyftx-message IS INITIAL.
+    CLEAR: ok_code.
+    MESSAGE w005.       " Entrar texto de mensagem
+  ENDIF.
+
+ENDMODULE.                 " check_blank_message  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_600  INPUT
+*&---------------------------------------------------------------------*
+*       User command da tela do editor
+*----------------------------------------------------------------------*
+MODULE user_command_600 INPUT.
+  DATA: v_texto(72).
+
+  CASE ok_code.
+    WHEN 'BACK' OR 'ENCE'.
+      IF NOT edit IS INITIAL.
+        CALL METHOD edit->get_text_as_r3table
+          IMPORTING
+            table = scr_prog[].
+      ENDIF.
+      IF scr_prog[] NE scr_prog_aux[].
+        CONCATENATE text-003 wk_ftx-seqnum text-004 INTO v_texto
+        SEPARATED BY space.
+        PERFORM popup_message USING v_texto text-002.
+        IF v_answer NE 'A'.           "Cancelar
+          IF v_answer = 'J'.
+            PERFORM salvar_texto.
+          ELSE.
+            CLEAR: scr_prog[], scr_prog_aux.
+            REFRESH: scr_prog[], scr_prog_aux.
+            CLEAR ok_code.
+            SET SCREEN 0.
+          ENDIF.
+        ENDIF.
+      ELSE.
+        CLEAR: scr_prog[], scr_prog_aux.
+        REFRESH: scr_prog[], scr_prog_aux.
+        CLEAR ok_code.
+        SET SCREEN 0.
+      ENDIF.
+    WHEN 'SAVE'.
+      PERFORM salvar_texto.
+  ENDCASE.
+
+ENDMODULE.                 " USER_COMMAND_600  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  move_screen_510_data  INPUT
+*&---------------------------------------------------------------------*
+MODULE move_screen_510_data INPUT.
+
+  CHECK v_tcode <> 'ZYNF005_E'.
+  MOVE j_1bdyref-selkz  TO wk_ref1-selkz.
+  MOVE j_1bdyref-itmnum TO wk_ref1-itmnum .
+  MODIFY wk_ref1 INDEX read_index_msg_link.
+  wk_flag_change = 'X'.
+
+ENDMODULE.                 " move_screen_510_data  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  scrolling_table_msg_link  INPUT
+*&---------------------------------------------------------------------*
+MODULE scrolling_table_msg_link INPUT.
+
+  IF ok_code = 'P--'  OR               " Primeira Página
+     ok_code = 'P-'   OR               " Pág. Anterior
+     ok_code = 'P+'   OR               " Pág. Seguinte
+     ok_code = 'P++'.                  " Última Página
+
+    CALL FUNCTION 'SCROLLING_IN_TABLE'
+      EXPORTING
+        entry_act             = read_index_msg_link
+        entry_from            = 1
+        entry_to              = tab_lines
+        last_page_full        = 'X'
+        loops                 = loop_lines
+        ok_code               = ok_code
+        page_act              = 1
+      IMPORTING
+        entry_new             = read_index_msg_link
+      EXCEPTIONS
+        no_entry_or_page_act  = 1
+        no_entry_to           = 2
+        no_ok_code_or_page_go = 3
+        OTHERS                = 4.
+
+    CLEAR ok_code.                     " Não passar user_command
+  ENDIF.
+
+ENDMODULE.                 " scrolling_table_msg_link  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0001  INPUT
+*&---------------------------------------------------------------------*
+MODULE user_command_0001 INPUT.
+
+  CASE sy-dynnr.
+
+    WHEN '0001'.
+      CASE ok_code.
+        WHEN 'BACK' OR 'ENCE'.
+          LEAVE PROGRAM.
+        WHEN 'ENTE'.
+          MOVE sy-tcode TO v_tcode.
+          PERFORM lock_record.
+          PERFORM selecionar_dados.
+        WHEN 'COM'.
+          PERFORM pesquisa_comandada.
+      ENDCASE.
+
+    WHEN '0003'.
+      CASE ok_code.
+        WHEN 'OK'.
+          PERFORM move_comandada.
+          CLEAR ok_code.
+        WHEN 'CANC'.
+          SET SCREEN 0.
+          LEAVE SCREEN.
+      ENDCASE.
+  ENDCASE.
+
+ENDMODULE.                 " USER_COMMAND_0001  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  CHECK_PARCEIRO  INPUT
+*&---------------------------------------------------------------------*
+*       Check partner identification                                   *
+*----------------------------------------------------------------------*
+MODULE check_parceiro INPUT.
+
+  PERFORM check_parceiro.
+
+ENDMODULE.                             " CHECK_PARCEIRO  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  check_loc_ret  INPUT
+*&---------------------------------------------------------------------*
+*       Check partner identification                                   *
+*----------------------------------------------------------------------*
+MODULE check_loc_ret INPUT.
+
+  IF NOT zynfe005-localret IS INITIAL AND
+         zynfe005-localret NE 'LR'.
+    MESSAGE e071.
+  ELSE.
+    IF zynfe005-localret IS INITIAL.
+      CLEAR zynfe005-locretid.
+    ELSEIF NOT zynfe005-localret IS INITIAL AND
+      zynfe005-locretid IS INITIAL.
+      MESSAGE e078.
+    ENDIF.
+  ENDIF.
+
+  PERFORM check_loc_ret.
+
+ENDMODULE.                             " check_loc_ret  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  check_loc_ent  INPUT
+*&---------------------------------------------------------------------*
+*       Check partner identification                                   *
+*----------------------------------------------------------------------*
+MODULE check_loc_ent INPUT.
+
+  IF NOT zynfe005-localent IS INITIAL AND
+         zynfe005-localent NE 'LE'.
+    MESSAGE e070.
+  ELSE.
+    IF zynfe005-localent IS INITIAL.
+      CLEAR zynfe005-locentid.
+    ELSEIF NOT zynfe005-localent IS INITIAL AND
+      zynfe005-locentid IS INITIAL.
+      MESSAGE e077.
+    ENDIF.
+  ENDIF.
+
+  PERFORM check_loc_ent.
+
+ENDMODULE.                             " check_loc_ent  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_parvw  INPUT
+*&---------------------------------------------------------------------*
+*       Verifica a obrigatoriedade dos campos da tela 0111
+*----------------------------------------------------------------------*
+MODULE trata_parvw INPUT.
+
+  PERFORM define_partner_subcreen.
+
+  IF zynfe005-parvw IS INITIAL AND ( ok_code EQ 'FC_ITENS'    OR
+                                     ok_code EQ 'FC_ADIC'     OR
+                                     ok_code EQ 'FC_CONT'     OR
+                                     ok_code EQ 'FC_IMPOSTOS' OR
+                                     ok_code EQ 'FC_MSG' ).
+    MESSAGE e004.
+  ENDIF.
+
+  IF zynfe005-parid IS INITIAL AND ( ok_code EQ 'FC_ITENS'    OR
+                                     ok_code EQ 'FC_ADIC'     OR
+                                     ok_code EQ 'FC_CONT'     OR
+                                     ok_code EQ 'FC_IMPOSTOS' OR
+                                     ok_code EQ 'FC_MSG' ).
+    MESSAGE e004.
+  ENDIF.
+
+* Verifica alteração do campo PARVW para proposição de valores
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe005-parvw NE v_parvw_aux.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING ' '.
+      ELSE.
+        zynfe005-parvw = v_parvw_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " trata_parvw  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_parid  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE trata_parid INPUT.
+
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe005-parid NE v_parid_aux.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING ' '.
+      ELSE.
+        zynfe005-parid = v_parid_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " trata_parid  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  atualiza_item  INPUT
+*&---------------------------------------------------------------------*
+*       Atualiza ou gera o item na tela de detalhe
+*----------------------------------------------------------------------*
+MODULE atualiza_item INPUT.
+
+  PERFORM atualiza_item.
+
+ENDMODULE.                 " atualiza_item  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  processa_material  INPUT
+*&---------------------------------------------------------------------*
+*       Faz as consistências para os dados materiais
+*----------------------------------------------------------------------*
+MODULE processa_material INPUT.
+
+  CHECK v_tcode <> 'ZYNF005_E'.
+
+  IF zynfe006-matnr IS INITIAL AND
+     zynfe006-werks IS INITIAL.
+*   Verifica se o grupo de material esta preenchido
+    IF  zynfe006-matkl IS INITIAL.
+      MESSAGE e019.
+    ELSE.
+      CLEAR: zynfe006-matnr,
+             zynfe006-werks.
+*     Verifica se a descrição do material está preenchida
+      IF zynfe006-maktx IS INITIAL.
+        SET CURSOR FIELD 'ZYNFE006-MAKTX'.
+        MESSAGE e021.
+      ENDIF.
+*     Verifica a unidade
+      IF zynfe006-meins IS INITIAL.
+        SET CURSOR FIELD 'ZYNFE006-MEINS'.
+        MESSAGE e022.
+      ENDIF.
+      IF zynfe006-nbm IS INITIAL.  " enable input of NBM for manual NFs
+        SELECT SINGLE * FROM  t023
+               WHERE  matkl       = zynfe006-matkl.
+        IF sy-subrc = 0.
+          zynfe006-nbm = t023-j_1bnbm.
+        ENDIF.
+      ENDIF.                        " enable input of NBM for manual NFs
+    ENDIF.
+
+  ELSE.
+*   Verifica se o nº do material foi preenchido
+    IF zynfe006-matnr IS INITIAL.
+      SET CURSOR FIELD 'ZYNFE006-MATNR'.
+      MESSAGE e023.
+    ENDIF.
+
+    IF zynfe006-werks IS INITIAL.
+      SET CURSOR FIELD 'ZYNFE006-WERKS'.
+      MESSAGE e024.
+    ENDIF.
+
+*   j_1bdylin-werks is filled -> determine bwkey
+    SELECT SINGLE * FROM t001w WHERE werks = zynfe006-werks.
+    IF sy-subrc NE 0 OR t001w-bwkey IS INITIAL.
+*      j_1bdylin-bwkey = t001w-bwkey.
+*    else.
+      MESSAGE e025 WITH zynfe006-werks.
+    ENDIF.
+
+*   get information from MARA (Material Master: General Data)
+    SELECT SINGLE * FROM  mara
+           WHERE  matnr       = zynfe006-matnr.
+    IF sy-subrc = 0.
+*     get description from MAKT (Material Descriptions)
+      SELECT SINGLE * FROM  makt
+             WHERE  matnr       = zynfe006-matnr
+             AND    spras       = sy-langu.
+      IF sy-subrc <> 0.
+        CLEAR zynfe006-maktx.
+      ELSE.
+        MOVE makt-maktx TO zynfe006-maktx.
+      ENDIF.
+
+*     zynfe006-matkl = mara-matkl.   " Grupo Mercadorias
+
+* Se o usuário mudar o material que veio dos parâmetros ou adicionar
+* um novo, os dados do novo material serão preenchidos
+      READ TABLE itab_zynft006 WITH KEY itmnum = zynfe006-itmnum.
+      IF sy-subrc NE 0 OR
+        ( itab_zynft006-matnr NE zynfe006-matnr OR
+           itab_zynft006-werks NE zynfe006-werks ).
+
+        SELECT SINGLE meins matkl FROM mara INTO
+                         (zynfe006-meins,zynfe006-matkl)
+                         WHERE matnr = zynfe006-matnr.
+
+        SELECT SINGLE mtorg mtuse ownpr FROM mbew INTO
+                   (zynfe006-matorg,zynfe006-matuse,zynfe006-ownpro)
+                        WHERE matnr = zynfe006-matnr
+                          AND bwkey = t001w-bwkey
+                          AND bwtar = space.
+
+        SELECT SINGLE steuc FROM marc INTO zynfe006-nbm
+                   WHERE matnr = zynfe006-matnr
+                     AND werks = zynfe006-werks.
+        IF sy-subrc NE 0.
+          MESSAGE e057 WITH zynfe006-matnr zynfe006-werks.
+        ENDIF.
+
+        MESSAGE w032.
+      ENDIF.
+    ENDIF.
+
+*     Verifica se a unidade está preenchida
+    IF zynfe006-meins IS INITIAL.
+      SET CURSOR FIELD 'ZYNFE006-MEINS'.
+      MESSAGE e022.
+    ENDIF.
+
+  ENDIF.
+
+
+ENDMODULE.                 " processa_material  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  exit_screen  INPUT
+*&---------------------------------------------------------------------*
+MODULE exit_screen INPUT.
+
+  IF flag_change_item = 'X' AND sy-dynnr = '0101'.
+
+    CALL FUNCTION 'POPUP_TO_CONFIRM_LOSS_OF_DATA'
+      EXPORTING
+        textline1 = text-023
+        titel     = text-022
+      IMPORTING
+        answer    = v_answer
+      EXCEPTIONS
+        OTHERS    = 1.
+
+    IF v_answer = 'J'.
+      IF pressed_tab = 'FC_ITMDET'.
+        DELETE itab_zynft002 WHERE itmnum = zynfe006-itmnum.
+        DELETE itab_zynft006 WHERE itmnum = v_max.
+        v_max = v_max - 10.
+        CLEAR descricao.
+      ELSEIF pressed_tab = 'FC_CONT'.
+        DELETE itab_zynft007_aux2 WHERE itmnum = v_max.
+        v_max_cont = v_max_cont - 10.
+      ENDIF.
+      SET SCREEN 0.
+      LEAVE SCREEN.
+    ENDIF.
+  ELSE.
+    IF pressed_tab = 'FC_ITMDET'.
+      v_max = v_max - 10.
+    ELSEIF pressed_tab = 'FC_CONT'.
+      v_max_cont = v_max_cont - 10.
+    ENDIF.
+    IF sy-dynnr = '0101'.
+      PERFORM gera_sequencial CHANGING zynfe005-nrseq.
+    ENDIF.
+    SET SCREEN 0.
+    LEAVE SCREEN.
+  ENDIF.
+
+
+ENDMODULE.                 " exit_screen  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_bupla  INPUT
+*&---------------------------------------------------------------------*
+*       Verifica a obrigatoriedade do filial
+*----------------------------------------------------------------------*
+MODULE trata_bupla INPUT.
+
+  IF zynfe005-bupla IS INITIAL AND ( ok_code EQ 'FC_ITENS'    OR
+                                     ok_code EQ 'FC_ADIC'     OR
+                                     ok_code EQ 'FC_CONT'     OR
+                                     ok_code EQ 'FC_IMPOSTOS' OR
+                                     ok_code EQ 'FC_MSG' ).
+    MESSAGE e004.
+  ENDIF.
+
+* Buscar os estados origem e destino
+* Origem
+  IF NOT zynfe005-bupla IS INITIAL.
+    SELECT SINGLE adrnr FROM j_1bbranch INTO v_adrnr
+                   WHERE bukrs  = zynfe005-bukrs
+                     AND branch = zynfe005-bupla.
+    SELECT SINGLE country region city1 FROM adrc INTO
+                (v_land1,v_bland,v_city1)
+                WHERE addrnumber = v_adrnr.
+  ENDIF.
+
+* Verifica alteração do campo BUPLA para proposição de valores
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe005-bupla NE v_bupla_aux.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING ' '.
+      ELSE.
+        zynfe005-bupla = v_bupla_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " trata_bupla  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_pesos  INPUT
+*&---------------------------------------------------------------------*
+*       Verifica se o peso bruto é menor que o líquido
+*----------------------------------------------------------------------*
+MODULE trata_pesos INPUT.
+
+  IF ( NOT zynfe006-ntgew IS INITIAL AND NOT zynfe006-brgew IS INITIAL )
+                                 AND ( zynfe006-ntgew > zynfe006-brgew ).
+    MESSAGE e031.
+  ENDIF.
+ENDMODULE.                 " trata_pesos  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_bukrs  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_bukrs INPUT.
+
+  IF zynfe005-bukrs IS INITIAL AND ( ok_code EQ 'FC_ITENS'    OR
+                                     ok_code EQ 'FC_ADIC'     OR
+                                     ok_code EQ 'FC_CONT'     OR
+                                     ok_code EQ 'FC_IMPOSTOS' OR
+                                     ok_code EQ 'FC_MSG' ).
+    MESSAGE e004.
+  ENDIF.
+
+* Verifica alteração do campo BUKRS para proposição de valores
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe005-bukrs NE v_bukrs_aux.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING ' '.
+      ELSE.
+        zynfe005-bukrs = v_bukrs_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " trata_bukrs  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_nftype  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_nftype INPUT.
+
+  IF zynfe005-nftype IS INITIAL AND ( ok_code EQ 'FC_ITENS'    OR
+                                     ok_code EQ 'FC_ADIC'     OR
+                                     ok_code EQ 'FC_CONT'     OR
+                                     ok_code EQ 'FC_IMPOSTOS' OR
+                                     ok_code EQ 'FC_MSG' ).
+    MESSAGE e004.
+  ENDIF.
+
+  IF NOT wa_zynft001-fnfref IS INITIAL.
+* faz a consistência da categoria da nota e o refdocnum
+    CLEAR tdynpread.
+    REFRESH tdynpread.
+
+    tdynpread-fieldname  = 'ZYNFE005-REFDOCNUM'.
+    APPEND tdynpread.
+
+    CALL FUNCTION 'DYNP_VALUES_READ'
+      EXPORTING
+        dyname               = 'SAPMZYNF005'
+        dynumb               = '0100'
+      TABLES
+        dynpfields           = tdynpread
+      EXCEPTIONS
+        invalid_abapworkarea = 1
+        invalid_dynprofield  = 2
+        invalid_dynproname   = 3
+        invalid_dynpronummer = 4
+        invalid_request      = 5
+        no_fielddescription  = 6
+        invalid_parameter    = 7
+        undefind_error       = 8
+        double_conversion    = 9
+        stepl_not_found      = 10
+        OTHERS               = 11.
+
+    READ TABLE tdynpread WITH KEY fieldname = 'ZYNFE005-REFDOCNUM'.
+    MOVE tdynpread-fieldvalue TO zynfe005-refdocnum.
+
+    FREE tdynpread.
+
+    IF NOT zynfe005-refdocnum IS INITIAL AND
+           zynfe005-nftype    IS INITIAL.
+
+      tdynpread-fieldname  = 'ZYNFE005-REFDOCNUM'.
+*    tdynpread-fieldvalue = zynfe005-refdocnum.
+      APPEND tdynpread.
+
+      CALL FUNCTION 'DYNP_VALUES_UPDATE'
+        EXPORTING
+          dyname               = 'SAPMZYNF005'
+          dynumb               = '0100'
+        TABLES
+          dynpfields           = tdynpread
+        EXCEPTIONS
+          invalid_abapworkarea = 1
+          invalid_dynprofield  = 2
+          invalid_dynproname   = 3
+          invalid_dynpronummer = 4
+          invalid_request      = 5
+          no_fielddescription  = 6
+          undefind_error       = 7
+          OTHERS               = 8.
+
+      FREE tdynpread.
+
+      MESSAGE e081.
+
+    ENDIF.
+  ENDIF.
+
+* Verifica alteração do campo NFTYPE para proposição de valores
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe005-nftype NE v_nftype_aux.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING ' '.
+      ELSE.
+        zynfe005-nftype = v_nftype_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " trata_nftype  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_pstdat  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_pstdat INPUT.
+  DATA: v_pstdat LIKE zynfe005-pstdat.
+
+
+  IF ( zynfe005-status EQ 'I' OR zynfe005-status IS INITIAL ) AND
+     v_tcode NE 'ZYNF005_E'.
+    IF NOT zynfe005-pstdat IS INITIAL.
+      IF zynfe005-data_entry = 'X'.
+        CALL FUNCTION 'J_1B_NF_CANCEL_CHECK_PERIOD'
+          EXPORTING
+            i_budat      = zynfe005-pstdat
+            i_bukrs      = zynfe005-bukrs
+          EXCEPTIONS
+            wrong_period = 1
+            OTHERS       = 2.
+
+        IF sy-subrc <> 0.
+          MESSAGE e060.
+        ENDIF.
+        IF NOT zynfe005-docdat IS INITIAL.
+          v_pstdat = zynfe005-pstdat - 30.
+          IF v_pstdat > zynfe005-docdat.
+            MESSAGE e061.
+          ELSEIF zynfe005-docdat > zynfe005-pstdat.
+            MESSAGE e062.
+          ENDIF.
+        ENDIF.
+      ELSE.
+        v_pstdat = sy-datum + 3.
+        IF zynfe005-pstdat > v_pstdat.
+          MESSAGE e079.
+        ELSEIF zynfe005-pstdat < sy-datum.
+          MESSAGE e080.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " trata_pstdat  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_menge  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_menge INPUT.
+
+*  Quantidade obrigatória para quando a NF não for complementar.
+  IF zynfe005-refdocnum IS INITIAL.   " NF não complementar.
+    IF zynfe006-menge IS INITIAL.
+      MESSAGE e026.                      " Valor não pode ser 0.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " trata_menge  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_netpr  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_netpr INPUT.
+
+  IF NOT wa_zynft002 IS INITIAL.
+
+    IF zynfe005-refdocnum IS INITIAL.   " NF não complementar.
+      IF zynfe006-netpr IS INITIAL.
+        MESSAGE e033.                      " Valor não pode ser 0.
+      ENDIF.
+
+      IF NOT zynfe006-netpr > 0.
+        SET CURSOR FIELD 'ZYNFE006-NETPR'.
+        MESSAGE e042.                    "Entrar um valor positivo
+      ENDIF.
+    ENDIF.
+
+  ENDIF.
+
+ENDMODULE.                 " trata_netpr  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_brgew  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_brgew INPUT.
+
+  IF zynfe006-brgew IS INITIAL AND zynfe005-refdocnum IS INITIAL.
+    MESSAGE e029.
+  ENDIF.
+
+ENDMODULE.                 " trata_brgew  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_ntgew  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_ntgew INPUT.
+
+  IF zynfe006-ntgew IS INITIAL AND zynfe005-refdocnum IS INITIAL.
+    MESSAGE e030.
+  ENDIF.
+
+ENDMODULE.                 " trata_ntgew  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_traty  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_traty INPUT.
+
+  IF ok_code = 'SAVE' AND zynfe005-traty IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_traty  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_traid  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_traid INPUT.
+
+  IF ok_code = 'SAVE' AND zynfe005-traid IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_traid  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_inco1  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_inco1 INPUT.
+
+  IF ok_code = 'SAVE' AND zynfe005-inco1 IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_inco1  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_nrdi  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_nrdi INPUT.
+
+  IF ok_code = 'SAVE' AND zynfe006-nrdi IS INITIAL AND
+     NOT wa_zynft002-fldi IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_nrdi  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_nrsd  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_nrsd INPUT.
+
+  IF ok_code = 'SAVE' AND zynfe006-nrsd IS INITIAL AND
+     NOT wa_zynft002-fldde IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_nrsd  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_nrre  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_nrre INPUT.
+
+  IF ok_code = 'SAVE' AND zynfe006-nrre IS INITIAL AND
+     NOT wa_zynft002-flre IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_nrre  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_tpvalor  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_tpvalor INPUT.
+
+  IF ( ok_code = 'SAVE' OR ok_code = 'GERA' )
+                    AND zynfe007-tpvalor IS INITIAL.
+* and not itab_zynft004-tpvalor is initial
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_tpvalor  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_d_newko  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_d_newko INPUT.
+
+  IF ( ok_code = 'SAVE' OR ok_code = 'GERA' )
+     AND zynfe007-d_newko IS INITIAL
+     AND NOT zynfe007-netwr IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_d_newko  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_d_bupla  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_d_bupla INPUT.
+
+  IF ( ok_code = 'SAVE' OR ok_code = 'GERA' )
+    AND zynfe007-d_bupla IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_d_bupla  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_c_newko  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_c_newko INPUT.
+
+  IF ( ok_code = 'SAVE' OR ok_code = 'GERA' )
+     AND zynfe007-c_newko IS INITIAL
+     AND NOT zynfe007-netwr IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_c_newko  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_c_bupla  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_c_bupla INPUT.
+
+  IF ( ok_code = 'SAVE' OR ok_code = 'GERA' )
+     AND zynfe007-c_bupla IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_c_bupla  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_SGTXT  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_sgtxt INPUT.
+
+  IF ( NOT itab_zynft004-fntoper  IS INITIAL OR
+       NOT itab_zynft004-flocneg  IS INITIAL OR
+       NOT itab_zynft004-fcodpar  IS INITIAL OR
+       NOT itab_zynft004-ftppar   IS INITIAL OR
+       NOT itab_zynft004-fnumnf   IS INITIAL OR
+       NOT itab_zynft004-forigem  IS INITIAL OR
+       NOT itab_zynft004-fdestino IS INITIAL ) AND
+     ok_code = 'GERA' AND zynfe007-sgtxt IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_SGTXT  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_netfre  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_netfre INPUT.
+
+  IF ok_code = 'SAVE' AND NOT wa_zynft002-netfre IS INITIAL AND
+     zynfe005-netfre IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_netfre  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_netins  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_netins INPUT.
+
+  IF ok_code = 'SAVE' AND NOT wa_zynft002-netins IS INITIAL AND
+     zynfe005-netins IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_netins  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_netoth  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_netoth INPUT.
+
+  IF ok_code = 'SAVE' AND NOT wa_zynft002-netoth IS INITIAL AND
+     zynfe005-netoth IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_netoth  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_anzpk  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_anzpk INPUT.
+
+  IF ok_code = 'SAVE' AND zynfe005-anzpk IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_anzpk  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_shpunt  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_shpunt INPUT.
+
+  IF ok_code = 'SAVE' AND zynfe005-shpunt IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_shpunt  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  calcula_totais  INPUT
+*&---------------------------------------------------------------------*
+MODULE calcula_totais INPUT.
+  DATA v_netwr_aux  LIKE zynft006-netwr.
+
+  CLEAR: v_ptipo, v_pbruto, v_pliquido, v_frete, v_seguro,
+         v_despesa, v_desconto, v_total, v_netwr.
+
+  LOOP AT itab_zynft006.
+
+    v_ptipo     = itab_zynft006-meins.
+    v_pbruto    = v_pbruto   + itab_zynft006-brgew .
+    v_pliquido  = v_pliquido + itab_zynft006-ntgew .
+    v_frete     = v_frete    + itab_zynft006-netfre.
+    v_seguro    = v_seguro   + itab_zynft006-netins.
+    v_despesa   = v_despesa  + itab_zynft006-netoth.
+    v_desconto  = v_desconto + itab_zynft006-netdis.
+    v_val       = itab_zynft006-netpr * itab_zynft006-menge.
+    v_total     = v_total + v_val.
+    v_netwr_aux = v_val                + itab_zynft006-netfre +
+                  itab_zynft006-netins + itab_zynft006-netoth +
+                  itab_zynft006-netdis.
+    v_netwr     = v_netwr + v_netwr_aux.
+
+  ENDLOOP.
+
+  LOOP AT itab_zynft009 WHERE taxgrp EQ 'IPI'.
+
+    v_netwr = v_netwr + itab_zynft009-taxval.
+
+  ENDLOOP.
+
+
+ENDMODULE.                 " calcula_totais  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  carrega_totais  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE carrega_totais INPUT.
+
+  zynfe005-nfnet  = v_total   .
+  zynfe005-netfre = v_frete   .
+  zynfe005-netins = v_seguro  .
+  zynfe005-netoth = v_despesa .
+  zynfe005-netdis = v_desconto.
+*  zynfe005-netwr  = v_netwr   .
+  zynfe005-ntgew  = v_pliquido.
+  zynfe005-brgew  = v_pbruto  .
+* zynfe005-gewei  = v_ptipo   .
+
+  if j_1bindoc-nftot is initial.
+    zynfe005-netwr  = v_netwr  .
+  else.
+    zynfe005-netwr  = j_1bindoc-nftot.
+  endif.
+
+ENDMODULE.                 " carrega_totais  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_valor  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE trata_valor INPUT.
+
+  IF ok_code = 'SAVE' AND zynfe007-netwr IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_valor  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  processa_valores  INPUT
+*&---------------------------------------------------------------------*
+*       Faz os cálculos dos valores
+*----------------------------------------------------------------------*
+MODULE processa_valores INPUT.
+
+  CHECK v_tcode <> 'ZYNF005_E'.            " not display
+
+  v_net = zynfe006-menge * zynfe006-netpr.
+  IF zynfe006-netwr IS INITIAL.
+    zynfe006-netwr = v_net.
+  ELSE.
+    IF zynfe006-netwr <> v_net.
+      MESSAGE w041.
+      zynfe006-netwr = v_net.
+    ENDIF.
+  ENDIF.
+
+  netwrt = zynfe006-netwr + zynfe006-netdis +
+           zynfe006-netfre + zynfe006-netins +
+           zynfe006-netoth.
+
+ENDMODULE.                 " processa_valores  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_cno  INPUT
+*&---------------------------------------------------------------------*
+*       Verifica a obrigatoriedade do cno
+*----------------------------------------------------------------------*
+MODULE trata_cno INPUT.
+
+  IF zynfe005-cno IS INITIAL AND ( ok_code EQ 'FC_ITENS'    OR
+                                     ok_code EQ 'FC_ADIC'     OR
+                                     ok_code EQ 'FC_CONT'     OR
+                                     ok_code EQ 'FC_IMPOSTOS' OR
+                                     ok_code EQ 'FC_MSG' ).
+    MESSAGE e004.
+  ENDIF.
+
+  IF NOT zynfe005-cno IS INITIAL AND
+         zynfe005-pstdat NE ' '  AND
+         zynfe005-pstdat NE '00000000'.
+
+* Antes o Programa verificava os Parâmetros pela data do dia (sy-datum),
+* agora o programa busca a partir da data de entrada e saída.
+
+    SELECT SINGLE * FROM zynft001 INTO wa_zynft001
+                        WHERE cno      = zynfe005-cno
+                          AND dtvgini  <= zynfe005-pstdat
+                          AND dtvgfin  >= zynfe005-pstdat.
+    IF sy-subrc NE 0.
+      IF zynfe005-status EQ 'I' OR zynfe005-status IS INITIAL.
+        MESSAGE s069.
+      ENDIF.
+    ENDIF.
+  ELSE.
+    CLEAR wa_zynft001.
+  ENDIF.
+
+* Verifica alteração do campo CNO para proposição de valores
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe005-cno NE v_cno_aux.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING ' '.
+      ELSE.
+        zynfe005-cno = v_cno_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " trata_cno  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  atualiza_cont  INPUT
+*&---------------------------------------------------------------------*
+*    Atualiza os dados da estrutura ZYNFE007 p/ a tabela itab_zynft007
+*----------------------------------------------------------------------*
+MODULE atualiza_cont INPUT.
+
+  MOVE-CORRESPONDING zynfe007 TO itab_zynft007_aux2.
+
+  MODIFY itab_zynft007_aux2 INDEX v_index.
+
+  LOOP AT itab_zynft007 WHERE tpvalor = zynfe007-tpvalor.
+
+    MOVE: zynfe007-d_newko TO itab_zynft007-d_newko,
+          zynfe007-d_bupla TO itab_zynft007-d_bupla,
+          zynfe007-d_kostl TO itab_zynft007-d_kostl,
+          zynfe007-d_prctr TO itab_zynft007-d_prctr,
+          zynfe007-d_gsber TO itab_zynft007-d_gsber,
+          zynfe007-d_aufnr TO itab_zynft007-d_aufnr,
+          zynfe007-c_newko TO itab_zynft007-c_newko,
+          zynfe007-c_bupla TO itab_zynft007-c_bupla,
+          zynfe007-c_kostl TO itab_zynft007-c_kostl,
+          zynfe007-c_prctr TO itab_zynft007-c_prctr,
+          zynfe007-c_gsber TO itab_zynft007-c_gsber,
+          zynfe007-c_aufnr TO itab_zynft007-c_aufnr,
+          zynfe007-sgtxt   TO itab_zynft007-sgtxt  ,
+          zynfe007-zuonr   TO itab_zynft007-zuonr  ,
+          zynfe007-xblnr   TO itab_zynft007-xblnr  .
+
+    MODIFY itab_zynft007 INDEX sy-tabix.
+
+  ENDLOOP.
+
+*  if sy-subrc ne 0.
+*    append itab_zynft007_aux2.
+*  endif.
+
+  flag_change_item = 'X'.
+
+ENDMODULE.                 " atualiza_cont  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_tranid  INPUT
+*&---------------------------------------------------------------------*
+*    Verifica se o campo ZYNFE005-TRANID está prenchido corretamente
+*----------------------------------------------------------------------*
+MODULE trata_tranid INPUT.
+  DATA: BEGIN OF wk_tranid.
+          INCLUDE STRUCTURE j_1binnad.
+  DATA: END OF wk_tranid.
+
+  CLEAR: j_1bad, wk_tranid.
+  IF NOT zynfe005-tranid IS INITIAL.
+    SELECT SINGLE * FROM  j_1bad
+           WHERE  parvw       = 'SP'.
+
+* make the checks ------------------------------------------------------
+    IF j_1bad-partyp <> 'B'.
+
+      CALL FUNCTION 'J_1B_NF_PARTNER_READ'
+        EXPORTING
+          partner_type           = j_1bad-partyp
+          partner_id             = zynfe005-tranid
+          partner_function       = 'SP'
+        IMPORTING
+          parnad                 = wk_tranid
+        EXCEPTIONS
+          partner_not_found      = 1
+          partner_type_not_found = 2
+          OTHERS                 = 3.
+      IF sy-subrc <> 0.
+        SET CURSOR FIELD 'ZYNFE005-TRANID'.
+        CLEAR v_tranid.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+                WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ELSE.
+* Joga a descrição do parceiro
+        MOVE: wk_tranid-name1  TO v_tranid.
+      ENDIF.
+    ENDIF.                               "j_1bad-partyp <> 'B'.
+  ELSE.
+    CLEAR: v_tranid.
+  ENDIF.
+
+ENDMODULE.                 " trata_tranid  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_parfilial  INPUT
+*&---------------------------------------------------------------------*
+*   Verifica a obrigatoriedade dos campos da tela 0112
+*----------------------------------------------------------------------*
+MODULE trata_parfilial INPUT.
+
+  PERFORM define_partner_subcreen.
+
+  IF zynfe005-parvw IS INITIAL AND ( ok_code EQ 'FC_ITENS'    OR
+                                     ok_code EQ 'FC_ADIC'     OR
+                                     ok_code EQ 'FC_CONT'     OR
+                                     ok_code EQ 'FC_IMPOSTOS' OR
+                                     ok_code EQ 'FC_MSG' ).
+    MESSAGE e004.
+  ENDIF.
+
+  IF zynfe005-mainbukrs IS INITIAL AND ( ok_code EQ 'FC_ITENS'    OR
+                                         ok_code EQ 'FC_ADIC'     OR
+                                         ok_code EQ 'FC_CONT'     OR
+                                         ok_code EQ 'FC_IMPOSTOS' OR
+                                         ok_code EQ 'FC_MSG' ).
+    MESSAGE e004.
+  ENDIF.
+
+  IF zynfe005-mainbranch IS INITIAL AND ( ok_code EQ 'FC_ITENS'    OR
+                                          ok_code EQ 'FC_ADIC'     OR
+                                          ok_code EQ 'FC_CONT'     OR
+                                          ok_code EQ 'FC_IMPOSTOS' OR
+                                          ok_code EQ 'FC_MSG' ).
+    MESSAGE e004.
+  ENDIF.
+
+* Verifica alteração do campo PARVW para proposição de valores
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe005-parvw NE v_parvw_aux.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING ' '.
+      ELSE.
+        zynfe005-parvw = v_parvw_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " trata_parfilial  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  CHECK_BRANCH  INPUT
+*&---------------------------------------------------------------------*
+*     Verifica se as entradas nos campos estão corretas e se a
+*     empresa está correta para a filial escolhida
+*----------------------------------------------------------------------*
+
+MODULE check_branch INPUT.
+
+  PERFORM check_branch.
+
+ENDMODULE.                             " CHECK_BRANCH  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  atualiza_parvw  INPUT
+*&---------------------------------------------------------------------*
+MODULE atualiza_parvw INPUT.
+
+  v_parvw = zynfe005-parvw.
+
+ENDMODULE.                 " atualiza_parvw  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_refdocnum  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_refdocnum INPUT.
+
+  IF ( zynfe005-status IS INITIAL OR
+       zynfe005-status EQ 'I' ) AND
+       v_tcode NE 'ZYNF005_E'.
+
+    LOOP AT SCREEN.
+      IF screen-name = 'ZYNFE005-REFDOCNUM'.
+        IF wa_zynft001-fnfref = 'X'.
+          screen-input = 1.
+        ELSE.
+          CLEAR: zynfe005-refdocnum, zynfe005-refnfnum,
+                 zynfe005-refseries, v_refdocnum      .
+          screen-input = 0.
+        ENDIF.
+        MODIFY SCREEN.
+      ENDIF.
+    ENDLOOP.
+
+    IF NOT zynfe005-cno       IS INITIAL AND
+       NOT wa_zynft001-fnfref IS INITIAL AND
+           zynfe005-refdocnum IS INITIAL AND
+       ( ok_code EQ 'FC_ITENS'    OR
+         ok_code EQ 'FC_ADIC'     OR
+         ok_code EQ 'FC_CONT'     OR
+         ok_code EQ 'FC_IMPOSTOS' OR
+         ok_code EQ 'FC_MSG' ).
+      MESSAGE e068.
+    ENDIF.
+
+
+    IF zynfe005-refdocnum NE v_refdocnum.
+      PERFORM busca_refdocnum.
+      CALL SCREEN 0002 STARTING AT 3 3.
+    ENDIF.
+
+    v_refdocnum = zynfe005-refdocnum.
+
+  ENDIF.
+
+ENDMODULE.                 " trata_refdocnum  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  atualiza_itab_zynfe010  INPUT
+*&---------------------------------------------------------------------*
+MODULE atualiza_itab_zynfe010 INPUT.
+
+  MOVE:  zynfe010-itmnum TO itab_zynfe010-itmnum,
+         zynfe010-matnr  TO itab_zynfe010-matnr ,
+         zynfe010-maktx  TO itab_zynfe010-maktx ,
+         zynfe010-matkl  TO itab_zynfe010-matkl ,
+         zynfe010-menge  TO itab_zynfe010-menge ,
+         zynfe010-meins  TO itab_zynfe010-meins ,
+         zynfe010-matorg TO itab_zynfe010-matorg,
+         zynfe010-werks  TO itab_zynfe010-werks ,
+         zynfe010-nbm    TO itab_zynfe010-nbm   ,
+         zynfe010-cfop   TO itab_zynfe010-cfop  ,
+         zynfe010-taxlw1 TO itab_zynfe010-taxlw1,
+         zynfe010-taxlw2 TO itab_zynfe010-taxlw2,
+         mark            TO itab_zynfe010-mark  .
+
+  MODIFY itab_zynfe010 INDEX tc_itmref-current_line.
+
+ENDMODULE.                 " atualiza_itab_zynfe010  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  busca_refdocnum  INPUT
+*&---------------------------------------------------------------------*
+MODULE busca_refdocnum INPUT.
+
+* Utilzando o match-code no docnum
+  CALL FUNCTION 'G_HELP_VALUES_GET'
+    EXPORTING
+      mc_object      = 'J1BA'
+    IMPORTING
+      selected_value = zynfe005-refdocnum.
+
+  IF NOT zynfe005-refdocnum IS INITIAL OR
+         zynfe005-refdocnum EQ '0000000000'.
+    EXIT.
+  ENDIF.
+
+  PERFORM busca_refdocnum.
+
+  CLEAR tdynpread.
+  REFRESH tdynpread.
+
+  tdynpread-fieldname  = 'ZYNFE005-REFNFNUM'.
+  tdynpread-fieldvalue = zynfe005-refnfnum.
+  APPEND tdynpread.
+
+  tdynpread-fieldname  = 'ZYNFE005-REFSERIES'.
+  tdynpread-fieldvalue = zynfe005-refseries.
+  APPEND tdynpread.
+
+  CALL FUNCTION 'DYNP_VALUES_UPDATE'
+    EXPORTING
+      dyname               = 'SAPMZYNF005'
+      dynumb               = '0100'
+    TABLES
+      dynpfields           = tdynpread
+    EXCEPTIONS
+      invalid_abapworkarea = 1
+      invalid_dynprofield  = 2
+      invalid_dynproname   = 3
+      invalid_dynpronummer = 4
+      invalid_request      = 5
+      no_fielddescription  = 6
+      undefind_error       = 7
+      OTHERS               = 8.
+
+  FREE tdynpread.
+
+  IF v_refdocnum NE zynfe005-refdocnum.
+    CALL SCREEN 0002 STARTING AT 3 3.
+  ENDIF.
+
+  v_refdocnum = zynfe005-refdocnum.
+
+ENDMODULE.                 " busca_refdocnum  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  atualiza_itab_zynft009  INPUT
+*&---------------------------------------------------------------------*
+MODULE atualiza_itab_zynft009 INPUT.
+
+  IF zynfe005-data_entry = 'X' AND zynfe009-itmnum = zynfe006-itmnum.
+
+    MOVE: zynfe009-taxtyp   TO itab_zynft009_aux-taxtyp  ,
+          zynfe009-taxgrp   TO itab_zynft009_aux-taxgrp  ,
+          zynfe009-base     TO itab_zynft009_aux-base    ,
+          zynfe009-rate     TO itab_zynft009_aux-rate    ,
+          zynfe009-aliquota TO itab_zynft009_aux-aliquota,
+          zynfe009-taxval   TO itab_zynft009_aux-taxval  ,
+          zynfe009-excbas   TO itab_zynft009_aux-excbas  ,
+          zynfe009-othbas   TO itab_zynft009_aux-othbas  ,
+          zynfe009-itmnum   TO itab_zynft009_aux-itmnum  ,
+          zynfe009-pauta    TO itab_zynft009_aux-pauta   .
+
+    MODIFY itab_zynft009_aux INDEX tc_imp-current_line.
+*    if sy-subrc ne 0.
+*      append itab_zynft009_aux.
+*    endif.
+
+* Atualiza tabela ZYNFT009
+    READ TABLE itab_zynft009 WITH KEY taxtyp = itab_zynft009_aux-taxtyp
+                                      taxgrp = itab_zynft009_aux-taxgrp
+                                      itmnum = itab_zynft009_aux-itmnum.
+    IF sy-subrc = 0.
+      MOVE itab_zynft009_aux TO itab_zynft009.
+      MODIFY itab_zynft009 INDEX sy-tabix.
+    ENDIF.
+
+  ENDIF.
+
+ENDMODULE.                 " atualiza_itab_zynft009  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_d_gsber  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_d_gsber INPUT.
+
+  IF ( ok_code = 'SAVE' OR ok_code = 'GERA' )
+     AND zynfe007-d_gsber IS INITIAL
+     AND NOT zynfe007-netwr IS INITIAL.
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " trata_d_gsber  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  verifica_nfnum  INPUT
+*&---------------------------------------------------------------------*
+MODULE verifica_nfnum INPUT.
+
+  IF ok_code EQ 'GERA' AND zynfe005-data_entry = 'X'.
+    PERFORM verifica_nfnum.
+  ENDIF.
+
+ENDMODULE.                 " verifica_nfnum  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_matnr  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_matnr INPUT.
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe006-matnr NE v_matnr_aux AND
+       NOT zynfe006-nrfiscal IS INITIAL.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING 'X'.
+      ELSE.
+        zynfe006-matnr = v_matnr_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " trata_matnr  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_mtart  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_mtart INPUT.
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe006-mtart NE v_mtart_aux AND
+    NOT zynfe006-nrfiscal IS INITIAL.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING 'X'.
+      ELSE.
+        zynfe006-mtart = v_mtart_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+ENDMODULE.                 " trata_mtart  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_matkl  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE trata_matkl INPUT.
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe006-matkl NE v_matkl_aux AND
+     NOT zynfe006-nrfiscal IS INITIAL.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING 'X'.
+      ELSE.
+        zynfe006-matkl = v_matkl_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+ENDMODULE.                 " trata_matkl  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_matorg  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE trata_matorg INPUT.
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe006-matorg NE v_matorg_aux AND
+     NOT zynfe006-nrfiscal IS INITIAL.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING 'X'.
+      ELSE.
+        zynfe006-matorg = v_matorg_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+ENDMODULE.                 " trata_matorg  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_nbm  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE trata_nbm INPUT.
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe006-nbm NE v_nbm_aux AND
+     NOT zynfe006-nrfiscal IS INITIAL.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING 'X'.
+      ELSE.
+        zynfe006-nbm = v_nbm_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+ENDMODULE.                 " trata_nbm  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  verifica_pstdat  INPUT
+*&---------------------------------------------------------------------*
+MODULE verifica_pstdat INPUT.
+
+  IF zynfe005-pstdat IS INITIAL AND ( ok_code EQ 'FC_ITENS'    OR
+                                     ok_code EQ 'FC_ADIC'     OR
+                                     ok_code EQ 'FC_CONT'     OR
+                                     ok_code EQ 'FC_IMPOSTOS' OR
+                                     ok_code EQ 'FC_MSG' ).
+    MESSAGE e004.
+  ENDIF.
+
+ENDMODULE.                 " verifica_pstdat  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  regime_especial  INPUT
+*&---------------------------------------------------------------------*
+* Cria as mensagens do Regime Especial na tela 150 (tela de mensagens)
+*----------------------------------------------------------------------*
+MODULE regime_especial INPUT.
+
+* As mensagem de Regime especial só serão criadas se o campo Direct
+* estiver 'flegado', se não for transação de Exibição e o campo DOCNUM
+* for inicial.
+  CHECK v_tcode NE 'ZYNF005_E'.
+  CHECK zynfe005-docnum IS INITIAL.
+  CHECK NOT zynfe005-direct IS INITIAL.
+
+* Quando for uma Entrada Comandada, a mensagem de Regime especial tem
+* que ser criada de acordo com o estado da Filial (v_bland)
+  SELECT SINGLE * FROM zynft005
+     WHERE nrseq_comand = zynfe005-nrseq.
+
+  IF sy-subrc EQ 0.
+    IF v_bland NE v_bland_aux.
+      PERFORM regime_especial USING v_bland.
+      v_bland_aux = v_bland.
+    ENDIF.
+    EXIT.
+  ENDIF.
+* Quando zynfe005-direct=1 usar o estado do parceiro (wk_parnad-regio)
+  IF zynfe005-direct EQ '1'.
+    IF wk_parnad-regio NE v_regio.
+      PERFORM regime_especial USING wk_parnad-regio.
+      v_regio = wk_parnad-regio.
+    ENDIF.
+  ENDIF.
+* Quando zynfe005-direct=2 usar o estado da filial (v_bland)
+  IF zynfe005-direct = '2'.
+    IF v_bland NE v_bland_aux.
+      PERFORM regime_especial USING v_bland.
+      v_bland_aux = v_bland.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " regime_especial  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_comandada  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_comandada INPUT.
+
+  IF zynfe005-docnum IS INITIAL.
+    MESSAGE e040.
+  ENDIF.
+
+ENDMODULE.                 " trata_comandada  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_mainbukrs  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_mainbukrs INPUT.
+
+* Verifica alteração do campo mainbukrs para proposição de valores
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe005-mainbukrs NE v_mainbukrs_aux.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING ' '.
+      ELSE.
+        zynfe005-mainbukrs = v_mainbukrs_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " trata_mainbukrs  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  trata_mainbranch  INPUT
+*&---------------------------------------------------------------------*
+MODULE trata_mainbranch INPUT.
+
+* Verifica alteração do campo mainbukrs para proposição de valores
+  IF NOT itab_zynft002 IS INITIAL.
+    IF zynfe005-mainbranch NE v_mainbranch_aux.
+      PERFORM popup_message_alter USING text-077 text-079 text-078.
+      IF v_answer = 'J'.
+        PERFORM excluir_parametros USING ' '.
+      ELSE.
+        zynfe005-mainbranch = v_mainbranch_aux.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDMODULE.                 " trata_mainbranch  INPUT
+
+* >>> Modificação ID 34 - 26/09/2011 - Início
+*&---------------------------------------------------------------------*
+*&      Module  SEARCH_HELP_0170  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE SEARCH_HELP_0170 INPUT.
+
+  perform search_help_0170.
+
+ENDMODULE.                 " SEARCH_HELP_0170  INPUT
+* <<< Modificação ID 34 - 26/09/2011 - Fim

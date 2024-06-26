@@ -1,0 +1,16 @@
+
+PROCESS BEFORE OUTPUT.
+
+  module set_screen.
+
+* Prepara campos
+*  module prepara_campos_0170.
+
+PROCESS AFTER INPUT.
+* MODULE USER_COMMAND_0170.
+
+PROCESS ON VALUE-REQUEST.
+
+  field WA_ZYNFT013-LOC_EMBARQUE
+    module search_help_0170.
+
